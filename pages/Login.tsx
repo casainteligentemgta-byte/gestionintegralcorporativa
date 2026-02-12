@@ -16,15 +16,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     if (!email || !password) return;
 
+    if (isSignUp && password.length < 6) {
+      alert('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { error, data } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: window.location.origin
+          }
         });
         if (error) throw error;
-        alert('Registro exitoso. Revisa tu correo para confirmar la cuenta.');
+
+        if (data.user && data.session) {
+          onLogin();
+        } else {
+          alert('Registro iniciado. Por favor, revisa tu correo electrónico para confirmar tu cuenta.');
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -34,7 +47,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         onLogin();
       }
     } catch (error: any) {
-      alert('Error: ' + error.message);
+      console.error('Auth error:', error);
+      let msg = error.message;
+      if (msg.includes('Email signups are disabled')) {
+        msg = 'El registro por email está desactivado en Supabase. Actívalo en Auth > Providers > Email.';
+      }
+      alert('Error: ' + msg);
     } finally {
       setLoading(false);
     }
