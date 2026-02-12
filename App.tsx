@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView, Worker, Company, Project } from './types';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -12,6 +12,7 @@ import CompanyForm from './pages/CompanyForm';
 import Projects from './pages/Projects';
 import ProjectForm from './pages/ProjectForm';
 import WorkerForm from './pages/WorkerForm';
+import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
   const [view, setView] = useState<AppView>('LOGIN');
@@ -20,6 +21,24 @@ const App: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [workerContext, setWorkerContext] = useState<'OBRERO' | 'EMPLEADO' | null>(null);
 
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setView('DASHBOARD');
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setView('DASHBOARD');
+      } else {
+        setView('LOGIN');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleNavigate = (newView: AppView, data?: any, context?: any) => {
     // Reset context-specific states
     if (newView !== 'WORKERS') setWorkerContext(null);
@@ -27,7 +46,7 @@ const App: React.FC = () => {
     if (newView === 'WORKER_PROFILE' || newView === 'WORKER_CARNET' || newView === 'WORKER_FORM') {
       setSelectedWorker(data || null);
     }
-    
+
     if (newView === 'COMPANY_FORM') {
       setSelectedCompany(data || null);
     }
@@ -40,7 +59,7 @@ const App: React.FC = () => {
       setSelectedProject(data || null);
       if (context) setWorkerContext(context);
     }
-    
+
     setView(newView);
   };
 
@@ -64,11 +83,11 @@ const App: React.FC = () => {
         return <ProjectForm key={selectedProject?.id || 'new-project'} project={selectedProject} onNavigate={handleNavigate} />;
       case 'WORKERS':
         return (
-          <Workers 
-            key={`${selectedProject?.id || 'all'}-${workerContext}`} 
-            project={selectedProject} 
-            type={workerContext} 
-            onNavigate={handleNavigate} 
+          <Workers
+            key={`${selectedProject?.id || 'all'}-${workerContext}`}
+            project={selectedProject}
+            type={workerContext}
+            onNavigate={handleNavigate}
           />
         );
       case 'WORKER_FORM':
@@ -90,7 +109,7 @@ const App: React.FC = () => {
           <div className="flex flex-col items-center justify-center h-full p-12 text-center opacity-50">
             <span className="material-symbols-outlined text-6xl mb-4">construction</span>
             <h2 className="text-xl font-bold uppercase tracking-widest">Vista en construcción</h2>
-            <button 
+            <button
               onClick={() => setView('DASHBOARD')}
               className="mt-6 text-primary font-bold uppercase tracking-widest text-xs"
             >
