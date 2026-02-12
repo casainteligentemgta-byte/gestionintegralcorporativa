@@ -10,6 +10,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -107,14 +108,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <input
-              className="w-full h-14 px-6 rounded-premium glass-input text-white placeholder:text-white/30 text-[16px]"
-              placeholder="Contraseña"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                className="w-full h-14 px-6 pr-14 rounded-premium glass-input text-white placeholder:text-white/30 text-[16px]"
+                placeholder="Contraseña"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+              >
+                <span className="material-symbols-outlined text-xl">
+                  {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
           </div>
 
           {!isSignUp && (
