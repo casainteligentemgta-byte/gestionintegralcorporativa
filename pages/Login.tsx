@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
 
 interface LoginProps {
@@ -7,6 +7,39 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+
+    setLoading(true);
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) throw error;
+        alert('Registro exitoso. Revisa tu correo para confirmar la cuenta.');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        onLogin();
+      }
+    } catch (error: any) {
+      alert('Error: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -18,7 +51,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       if (error) throw error;
     } catch (error) {
       console.error('Error logging in with Google:', error);
-      alert('Error al iniciar sesión con Google. Asegúrate de que el proveedor esté configurado en Supabase.');
+      alert('Error al iniciar sesión con Google.');
     }
   };
 
@@ -38,37 +71,63 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-extrabold tracking-tighter text-white mb-3 uppercase">Bienvenidos</h1>
-          <p className="text-white/60 text-[15px] font-medium tracking-wide">KORE tu gestionador integral</p>
+          <h1 className="text-5xl font-extrabold tracking-tighter text-white mb-3 uppercase">
+            {isSignUp ? 'Registro' : 'Bienvenidos'}
+          </h1>
+          <p className="text-white/60 text-[15px] font-medium tracking-wide">
+            {isSignUp ? 'Crea tu cuenta de acceso' : 'KORE tu gestionador integral'}
+          </p>
         </div>
 
-        <form className="w-full space-y-4" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+        <form className="w-full space-y-4" onSubmit={handleAuth}>
           <div className="space-y-3">
             <input
               className="w-full h-14 px-6 rounded-premium glass-input text-white placeholder:text-white/30 text-[16px]"
-              placeholder="Usuario"
-              type="text"
+              placeholder="Correo Electrónico"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
             <input
               className="w-full h-14 px-6 rounded-premium glass-input text-white placeholder:text-white/30 text-[16px]"
               placeholder="Contraseña"
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
 
-          <div className="flex justify-end px-2">
-            <button type="button" className="text-[13px] text-white/40 hover:text-white transition-colors">
-              ¿Olvidé mi contraseña?
-            </button>
-          </div>
+          {!isSignUp && (
+            <div className="flex justify-end px-2">
+              <button type="button" className="text-[13px] text-white/40 hover:text-white transition-colors">
+                ¿Olvidé mi contraseña?
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"
-            className="w-full h-14 bg-primary text-white font-semibold rounded-premium apple-button shadow-2xl shadow-primary/40 mt-2"
+            disabled={loading}
+            className="w-full h-14 bg-primary text-white font-semibold rounded-premium apple-button shadow-2xl shadow-primary/40 mt-2 flex items-center justify-center gap-2"
           >
-            Entrar
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              isSignUp ? 'Crear Cuenta' : 'Entrar'
+            )}
           </button>
         </form>
+
+        <div className="mt-6">
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-[13px] text-primary font-bold hover:text-white transition-colors"
+          >
+            {isSignUp ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate'}
+          </button>
+        </div>
 
         <div className="w-full flex items-center gap-4 my-10">
           <div className="h-[0.5px] flex-1 bg-white/10"></div>
