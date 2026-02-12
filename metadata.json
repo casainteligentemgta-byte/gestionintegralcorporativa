@@ -1,0 +1,9 @@
+
+{
+  "name": "KORE ERP - Legal Management Platform",
+  "description": "A premium enterprise legal and HR management platform for construction companies, featuring company onboarding, project tracking, worker registration, and AI-powered legal document analysis.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
