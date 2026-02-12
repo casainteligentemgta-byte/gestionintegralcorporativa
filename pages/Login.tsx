@@ -17,6 +17,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     if (!email || !password) return;
 
+    // Bypass for Testing / Master Access
+    if (email === 'admin@kore.com' && password === 'KORE2026') {
+      onLogin();
+      return;
+    }
+
+    // Critical check for environment variables
+    if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
+      alert('❌ ERROR DE CONFIGURACIÓN: Las llaves de Supabase no se han detectado en este despliegue. Por favor, ve a Netlify y realiza un "Clear cache and deploy site" desde la pestaña Deploys.');
+      return;
+    }
+
     if (isSignUp && password.length < 6) {
       alert('La contraseña debe tener al menos 6 caracteres.');
       return;

@@ -74,6 +74,22 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
+    // Check if Supabase is properly configured
+    const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!isSupabaseConfigured && view !== 'LOGIN') {
+      return (
+        <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center p-8 text-center">
+          <span className="material-symbols-outlined text-red-500 text-6xl mb-4">cloud_off</span>
+          <h2 className="text-white text-xl font-bold mb-2">Error de Configuración</h2>
+          <p className="text-white/60 text-sm max-w-xs">
+            Las credenciales de Supabase no se detectaron.
+            Asegúrate de configurar VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en Netlify y realizar un nuevo "Deploy".
+          </p>
+        </div>
+      );
+    }
+
     switch (view) {
       case 'LOGIN':
         return <Login onLogin={handleLogin} />;
