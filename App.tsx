@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppView, Worker, Company, Project } from './types';
-import Layout from './components/Layout';
+import Layout from '@/components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Workers from './pages/Workers';
