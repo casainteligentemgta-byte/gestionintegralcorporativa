@@ -12,6 +12,7 @@ import CompanyForm from './pages/CompanyForm';
 import Projects from './pages/Projects';
 import ProjectForm from './pages/ProjectForm';
 import WorkerForm from './pages/WorkerForm';
+import RequisitionDetail from './pages/RequisitionDetail';
 import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
@@ -19,6 +20,7 @@ const App: React.FC = () => {
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedRequisitionId, setSelectedRequisitionId] = useState<string | null>(null);
   const [workerContext, setWorkerContext] = useState<'OBRERO' | 'EMPLEADO' | null>(null);
 
   useEffect(() => {
@@ -58,6 +60,10 @@ const App: React.FC = () => {
     if (newView === 'WORKERS') {
       setSelectedProject(data || null);
       if (context) setWorkerContext(context);
+    }
+
+    if (newView === 'REQUISITION_DETAIL') {
+      setSelectedRequisitionId(data || null);
     }
 
     setView(newView);
@@ -104,6 +110,8 @@ const App: React.FC = () => {
         ) : (
           <Workers onNavigate={handleNavigate} />
         );
+      case 'REQUISITION_DETAIL':
+        return <RequisitionDetail requisitionId={selectedRequisitionId || undefined} onNavigate={handleNavigate} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full p-12 text-center opacity-50">

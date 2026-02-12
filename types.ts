@@ -1,16 +1,37 @@
 
-export type AppView = 
-  | 'LOGIN' 
-  | 'DASHBOARD' 
-  | 'COMPANIES' 
-  | 'COMPANY_FORM' 
-  | 'PROJECTS' 
-  | 'PROJECT_FORM' 
-  | 'WORKERS' 
-  | 'WORKER_FORM' 
+export type AppView =
+  | 'LOGIN'
+  | 'DASHBOARD'
+  | 'COMPANIES'
+  | 'COMPANY_FORM'
+  | 'PROJECTS'
+  | 'PROJECT_FORM'
+  | 'WORKERS'
+  | 'WORKER_FORM'
   | 'WORKER_PROFILE'
   | 'WORKER_CARNET'
+  | 'REQUISITION_DETAIL'
   | 'CONTROL_PANEL';
+
+export interface InventoryItem {
+  id: string;
+  material_name: string;
+  unit_measure: string;
+  current_stock: number;
+  min_stock_alert: number;
+  unit_price: number;
+}
+
+export interface ProjectMovement {
+  id: string;
+  project_id: string;
+  material_id: string;
+  quantity_dispatched: number;
+  requires_transfer: boolean;
+  transfer_cost: number;
+  status: 'Pendiente' | 'Despachado' | 'Recibido';
+  registration_date: string;
+}
 
 export interface Company {
   id: string;
@@ -88,14 +109,14 @@ export interface Worker {
   idPhoto?: string;
   specialty: string;
   status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
-  
+
   criminalRecords: {
     hasRecords: boolean;
     issuedBy: string;
     place: string;
     date: string;
   };
-  
+
   education: {
     canRead: boolean;
     primary: string;
@@ -130,7 +151,7 @@ export interface Worker {
 
   dependents: Dependent[];
   experience: WorkExperience[];
-  
+
   banking: {
     bank: string;
     accountType: string;
