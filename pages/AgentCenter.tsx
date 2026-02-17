@@ -164,6 +164,32 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
         }
     };
 
+    const handleSaveInvoice = async () => {
+        if (!extractedInvoice) return;
+        setIsAnalyzing(true);
+        try {
+            // Nota: material_id se deja como pendiente para el flujo de conciliación
+            await dataService.processIAPurchase({
+                rif_proveedor: extractedInvoice.proveedor_rif,
+                nombre_proveedor: extractedInvoice.proveedor_nombre,
+                numero_factura: extractedInvoice.numero_factura,
+                total_neto: extractedInvoice.total_neto,
+                items: extractedInvoice.items.map((item: any) => ({
+                    material_id: 'pending_matching',
+                    cantidad: item.cantidad,
+                    precio: item.precio_unitario
+                }))
+            });
+            alert('¡Factura grabada con éxito en el sistema!');
+            setExtractedInvoice(null);
+        } catch (error: any) {
+            console.error('Save Error:', error);
+            alert(`Error al grabar: ${error.message || 'Error desconocido'}`);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     return (
         <div className="p-4 md:p-8 space-y-8 max-w-4xl mx-auto pb-32 animate-in fade-in duration-700">
             {/* Header */}
@@ -281,7 +307,13 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
                                     </div>
 
                                     <div className="flex gap-4 pt-4">
-                                        <button className="flex-1 h-12 bg-white text-black font-black uppercase text-[10px] rounded-2xl hover:bg-emerald-400 transition-colors">Guardar en Sistema</button>
+                                        <button
+                                            onClick={handleSaveInvoice}
+                                            disabled={isAnalyzing}
+                                            className="flex-1 h-12 bg-white text-black font-black uppercase text-[10px] rounded-2xl hover:bg-emerald-400 transition-colors disabled:opacity-50"
+                                        >
+                                            {isAnalyzing ? 'Grabando...' : 'Guardar en Sistema'}
+                                        </button>
                                         <button onClick={() => setExtractedInvoice(null)} className="px-6 h-12 bg-white/5 border border-white/10 text-stone-400 rounded-2xl font-black uppercase text-[10px]">Cancelar</button>
                                     </div>
                                 </div>
