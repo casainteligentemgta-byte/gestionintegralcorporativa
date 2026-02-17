@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Project } from '../types';
 import { supabase } from '../services/supabase';
+import { dataService } from '../services/dataService';
 
 interface ProjectFormProps {
   project?: Project | any;
@@ -20,7 +21,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onNavigate }) => {
     lat: project?.location?.lat || project?.lat || null,
     lng: project?.location?.lng || project?.lng || null,
     image: project?.image || '',
-    status: project?.status || 'ACTIVE'
+    status: project?.status || 'ACTIVE',
+    ownerPhone: project?.phone || '',
+    ownerEmail: project?.email || ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -48,10 +51,18 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onNavigate }) => {
       },
       (error) => {
         console.error("Error capturing location:", error);
-        alert("No se pudo obtener la ubicación. Asegúrese de dar permisos de GPS.");
+        let msg = "No se pudo obtener la ubicación.";
+        if (error.code === 1) msg = "Permiso denegado. Por favor, aprueba los permisos de GPS en la barra de direcciones de tu navegador.";
+        if (error.code === 2) msg = "Posición no disponible. Verifique su conexión y señal GPS.";
+        if (error.code === 3) msg = "Tiempo de espera agotado.";
+        alert(msg);
         setIsLocating(false);
       },
-      { enableHighAccuracy: true }
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
     );
   };
 
@@ -96,6 +107,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onNavigate }) => {
         lng: formData.lng,
         image: formData.image,
         status: formData.status,
+        phone: formData.ownerPhone,
+        email: formData.ownerEmail,
       };
 
       let error;
@@ -191,6 +204,29 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onNavigate }) => {
                 className="w-full glass-input rounded-xl px-4 py-3.5 text-sm"
                 placeholder="Nombre de la empresa cliente"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Móvil del Propietario</label>
+                <input
+                  name="ownerPhone"
+                  value={formData.ownerPhone}
+                  onChange={handleChange}
+                  className="w-full glass-input rounded-xl px-4 py-3.5 text-sm"
+                  placeholder="Ej. +58 412..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Email</label>
+                <input
+                  name="ownerEmail"
+                  value={formData.ownerEmail}
+                  onChange={handleChange}
+                  className="w-full glass-input rounded-xl px-4 py-3.5 text-sm"
+                  placeholder="propietario@email.com"
+                  type="email"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -312,7 +348,27 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onNavigate }) => {
                   <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Subir Imagen de Obra</p>
                 </div>
               )}
-              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+              <input
+                type="file"
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setLoading(true);
+                    try {
+                      const filePath = `proyectos/${Date.now()}-${file.name}`;
+                      const publicUrl = await dataService.uploadFile('inventory-assets', filePath, file);
+                      setFormData(prev => ({ ...prev, image: publicUrl }));
+                    } catch (error: any) {
+                      console.error('Project image upload error:', error);
+                      alert('Error al subir imagen: ' + error.message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }}
+              />
             </div>
           </div>
         </section>

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AppView } from '../types';
+import NotificationGuard from './NotificationGuard';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, titl
   const NavItem = ({ view, icon, label }: { view: AppView, icon: string, label: string }) => {
     const isActive = currentView === view || (view === 'DASHBOARD' && currentView === 'CONTROL_PANEL');
     return (
-      <button 
+      <button
         onClick={() => onNavigate(view)}
         className={`flex flex-col items-center gap-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-500'}`}
       >
@@ -27,6 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, titl
 
   return (
     <div className="max-w-md mx-auto min-h-screen bg-stone-950 flex flex-col relative overflow-hidden">
+      <NotificationGuard />
       {/* iOS Status Bar Mock */}
       <div className="h-10 w-full flex justify-between items-center px-8 shrink-0 bg-stone-950/80 backdrop-blur-md sticky top-0 z-[60] no-print">
         <span className="text-xs font-semibold"></span>
@@ -40,12 +42,17 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onNavigate, titl
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 h-20 glass-card border-t border-white/5 flex items-start justify-around px-6 pt-3 z-[100] max-w-md mx-auto no-print">
+      <nav className="fixed bottom-0 left-0 right-0 h-20 glass-card border-t border-white/5 flex items-start justify-around px-1 pt-3 z-[100] max-w-md mx-auto no-print overflow-x-auto">
         <NavItem view="DASHBOARD" icon="grid_view" label="Inicio" />
         <NavItem view="COMPANIES" icon="business" label="Empresas" />
         <NavItem view="PROJECTS" icon="architecture" label="Obras" />
         <NavItem view="WORKERS" icon="groups" label="Nómina" />
-        <NavItem view="WORKER_FORM" icon="settings" label="Ajustes" />
+        <NavItem view="INVENTORY_DASHBOARD" icon="inventory_2" label="Inventario" />
+        {/* <NavItem view="TICKET_MANAGEMENT" icon="shopping_cart" label="Compras" /> */}
+        <NavItem view="ACCOUNTING_DASHBOARD" icon="account_balance" label="Contabilidad" />
+        <NavItem view="PURCHASE_REPORTS" icon="receipt_long" label="Historial" />
+        <NavItem view="GUARDIAN_CONSOLE" icon="shield_person" label="Seguridad" />
+        <NavItem view="SETTINGS" icon="settings" label="Ajustes" />
         {/* Home Indicator */}
         <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/20 rounded-full"></div>
       </nav>

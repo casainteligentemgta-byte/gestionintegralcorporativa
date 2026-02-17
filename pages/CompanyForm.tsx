@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Company } from '../types';
 import { supabase } from '../services/supabase';
+import { dataService } from '../services/dataService';
 
 interface CompanyFormProps {
   company?: Company | any;
@@ -22,7 +23,10 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onNavigate }) => {
     representativeCivilStatus: company?.representative?.civilStatus || company?.representative_civil_status || '',
     representativePosition: company?.representative?.position || company?.representative_position || '',
     representativeNationality: company?.representative?.nationality || company?.representative_nationality || '',
+    representativeEmail: company?.representative?.email || company?.representative_email || '',
+    representativeWhatsapp: company?.representative?.whatsapp || company?.representative_whatsapp || '',
     logo: company?.logo || '',
+    cover_image: company?.cover_image || '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -49,7 +53,10 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onNavigate }) => {
         representative_civil_status: formData.representativeCivilStatus,
         representative_position: formData.representativePosition,
         representative_nationality: formData.representativeNationality,
+        representative_email: formData.representativeEmail,
+        representative_whatsapp: formData.representativeWhatsapp,
         logo: formData.logo,
+        cover_image: formData.cover_image,
       };
 
       let error;
@@ -238,6 +245,29 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onNavigate }) => {
                 placeholder="Ej. Director General"
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Correo Electrónico</label>
+                <input
+                  name="representativeEmail"
+                  type="email"
+                  value={formData.representativeEmail}
+                  onChange={handleChange}
+                  className="w-full glass-input rounded-xl px-4 py-3.5 text-sm"
+                  placeholder="ejemplo@correo.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-slate-500 uppercase font-bold px-1">WhatsApp</label>
+                <input
+                  name="representativeWhatsapp"
+                  value={formData.representativeWhatsapp}
+                  onChange={handleChange}
+                  className="w-full glass-input rounded-xl px-4 py-3.5 text-sm"
+                  placeholder="+58 412 0000000"
+                />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -257,26 +287,81 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onNavigate }) => {
                   ) : (
                     <span className="material-symbols-outlined text-slate-600 text-3xl">add_photo_alternate</span>
                   )}
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+                  <input
+                    type="file"
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          setLoading(true);
+                          const filePath = `logos/${Date.now()}-${file.name}`;
+                          const publicUrl = await dataService.uploadFile('inventory-assets', filePath, file);
+                          setFormData(prev => ({ ...prev, logo: publicUrl }));
+                        } catch (error: any) {
+                          console.error('Logo upload error:', error);
+                          alert('Error al subir logo: ' + error.message);
+                        } finally {
+                          setLoading(false);
+                        }
+                      }
+                    }}
+                  />
                 </div>
                 <div className="flex-1 text-[11px] text-slate-500">
-                  Suba una imagen en formato PNG o JPG (Máx. 2MB).
+                  {formData.logo ? 'Logo cargado exitosamente.' : 'Suba una imagen en formato PNG o JPG (Máx. 2MB).'}
                 </div>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-2">
-              <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Documentación</label>
-              <div className="glass-card border-dashed border-white/20 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 group hover:border-primary/50 transition-colors cursor-pointer relative">
-                <span className="material-symbols-outlined text-4xl text-slate-600 group-hover:text-primary transition-colors">cloud_upload</span>
-                <div className="text-center">
-                  <p className="text-sm font-bold text-slate-300">Arrastre archivos aquí</p>
-                  <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold">Acta Constitutiva, RIF, Solvencias</p>
-                </div>
-                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" multiple />
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Cover Image */}
+        <section className="space-y-4">
+          <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">wallpaper</span>
+            Imagen de Portada
+          </h3>
+          <label className={`w-full aspect-[21/9] rounded-2xl glass-card border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden group hover:border-primary/50 transition-colors cursor-pointer ${formData.cover_image ? 'border-none' : ''}`}>
+            {formData.cover_image ? (
+              <>
+                <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors z-10" />
+                <img src={formData.cover_image} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover" />
+                <div className="z-20 flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-white text-3xl drop-shadow-lg">edit</span>
+                  <span className="text-[10px] font-bold text-white uppercase tracking-widest drop-shadow-md">Cambiar Portada</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-slate-600 text-4xl mb-2 group-hover:text-primary transition-colors">add_photo_alternate</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-primary transition-colors">Subir Imagen de Portada</span>
+              </>
+            )}
+            <input
+              type="file"
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              accept="image/*"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  try {
+                    setLoading(true);
+                    const cleanName = file.name.replace(/[^a-z0-9.]/gi, '_');
+                    const filePath = `covers/${Date.now()}-${cleanName}`;
+                    const publicUrl = await dataService.uploadFile('inventory-assets', filePath, file);
+                    setFormData(prev => ({ ...prev, cover_image: publicUrl }));
+                  } catch (error: any) {
+                    console.error('Cover upload error:', error);
+                    alert('Error al subir portada: ' + error.message);
+                  } finally {
+                    setLoading(false);
+                  }
+                }
+              }}
+            />
+          </label>
         </section>
 
         <div className="pt-8 px-4 space-y-4">
@@ -299,7 +384,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onNavigate }) => {
           )}
         </div>
       </main>
-    </div>
+    </div >
   );
 };
 

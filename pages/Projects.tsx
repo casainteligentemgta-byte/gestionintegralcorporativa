@@ -96,58 +96,56 @@ const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
           </div>
         ) : (
           filteredProjects.map((project: any) => (
-            <div key={project.id} className="glass-card rounded-apple overflow-hidden transition-transform active:scale-[0.98]">
-              <div className="relative">
-                {project.image ? (
-                  <img
-                    src={project.image}
-                    alt={project.name}
-                    className="w-full h-44 object-cover opacity-80"
-                  />
-                ) : (
-                  <div className="w-full h-44 bg-white/5 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-4xl text-white/10">construction</span>
+            <div key={project.id} className="glass-card rounded-premium overflow-hidden transition-transform active:scale-[0.98] border-white/5 bg-white/[0.01]">
+              <div
+                className="relative h-60 flex flex-col justify-end p-6 group"
+                style={project.image ? {
+                  backgroundImage: `linear-gradient(to bottom, rgba(10,10,15,0) 0%, rgba(10,10,15,1) 100%), url("${project.image}")`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                } : {}}
+              >
+                {!project.image && (
+                  <div className="absolute inset-0 bg-primary/5 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-6xl text-white/5">construction</span>
                   </div>
                 )}
+
                 {getStatusBadge(project.status)}
-              </div>
-              <div className="p-5 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-white text-lg leading-tight">{project.name}</h3>
-                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.15em] mt-1">{project.owner || 'Sin cliente'}</p>
+
+                <div className="relative z-10 flex justify-between items-end">
+                  <div className="space-y-1">
+                    <h3 className="font-black text-white text-2xl tracking-tighter leading-none">{project.name}</h3>
+                    <p className="text-primary font-bold text-[9px] uppercase tracking-[0.2em]">{project.owner || 'Proyecto Interno'}</p>
+                    <div className="flex items-center gap-1.5 text-stone-400 mt-2">
+                      <span className="material-symbols-outlined text-xs">location_on</span>
+                      <span className="text-[10px] font-medium truncate max-w-[200px]">{project.address || 'Ubicación no definida'}</span>
+                    </div>
                   </div>
                   <button
                     onClick={() => onNavigate('PROJECT_FORM', project)}
-                    className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+                    className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all hover:scale-110"
                   >
                     <span className="material-symbols-outlined text-xl">edit_note</span>
                   </button>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-2 text-slate-400 pb-2">
-                  <span className="material-symbols-outlined text-sm">location_on</span>
-                  <span className="text-[10px] font-medium truncate">{project.address || 'Sin ubicación'}</span>
-                </div>
-
-                <div className="pt-2 flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onNavigate('WORKERS', project, 'OBRERO')}
-                      className="flex-1 py-3.5 bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl apple-button flex items-center justify-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-sm">engineering</span>
-                      Obreros
-                    </button>
-                    <button
-                      onClick={() => onNavigate('WORKERS', project, 'EMPLEADO')}
-                      className="flex-1 py-3.5 bg-white/5 border border-white/10 text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl apple-button flex items-center justify-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-sm">badge</span>
-                      Empleados
-                    </button>
-                  </div>
-                </div>
+              <div className="p-4 bg-white/[0.02] border-t border-white/5 flex gap-2">
+                <button
+                  onClick={() => onNavigate('WORKERS', project, 'OBRERO')}
+                  className="flex-1 py-3.5 bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl apple-button flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">engineering</span>
+                  Obreros
+                </button>
+                <button
+                  onClick={() => onNavigate('WORKERS', project, 'EMPLEADO')}
+                  className="flex-1 py-3.5 bg-white/5 border border-white/10 text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl apple-button flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">badge</span>
+                  Empleados
+                </button>
               </div>
             </div>
           ))

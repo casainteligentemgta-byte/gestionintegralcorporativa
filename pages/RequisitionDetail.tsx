@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { ProjectMovement, InventoryItem, Project } from '../types';
+import { MovimientoObra, InventarioItem, Project } from '../types';
 
 interface RequisitionDetailProps {
     onNavigate: (view: any, data?: any) => void;
@@ -22,11 +22,11 @@ const RequisitionDetail: React.FC<RequisitionDetailProps> = ({ onNavigate, requi
     const fetchMovement = async () => {
         try {
             const { data, error } = await supabase
-                .from('project_movements')
+                .from('Movimientos_Obras')
                 .select(`
           *,
           project:projects(*),
-          material:inventory_global(*)
+          material:"Inventario_Global"(*)
         `)
                 .eq('id', requisitionId)
                 .single();
@@ -44,7 +44,7 @@ const RequisitionDetail: React.FC<RequisitionDetailProps> = ({ onNavigate, requi
     const handleUpdateTransferCost = async () => {
         try {
             const { error } = await supabase
-                .from('project_movements')
+                .from('Movimientos_Obras')
                 .update({ transfer_cost: transferCost })
                 .eq('id', requisitionId);
 

@@ -1,40 +1,47 @@
 
 import React, { useState } from 'react';
+import { dataService } from '../services/dataService';
 import { Worker, Dependent, WorkExperience } from '../types';
 import { supabase } from '../services/supabase';
+import { COUNTRIES, NATIONALITIES, SPECIALTIES } from '../constants';
 
-const SPECIALTIES = [
-  "OBRERO DE 1era.", "VIGILANTE", "AYUDANTE", "AUXILIAR DE DEPOSITO", "CHOFER DE 4ta.",
-  "OPERADOR DE MARTILLO PERFORADOR", "AYUDANTE DE OPERADORES", "AYUDANTE DE MECANICO DIESEL",
-  "AYUDANTE DE TOPOGRAFO", "RASTRILLERO", "ESPESORISTA", "PALERO ASFALTICO", "CAPORAL",
-  "ALBAÑIL DE 2da.", "CARPINTERO DE 2da.", "CABILLERO DE 2da.", "PLOMERO DE 2da.",
-  "ELECTRICISTA DE 2da.", "GRANITERO DE 2da.", "PINTOR DE 2da.", "IMPERMEABILIZADOR DE 2da.",
-  "GÜINCHERO", "MAQUINISTA DE CONCRETO DE 2da.", "OPERADOR DE PLANTA FIJA DE 2da.",
-  "CHOFER DE 3ra. (HASTA 3 TONS)", "OPERADOR DE EQUIPO PERFORADOR", "OPERADOR DE EQUIPO LIVIANO",
-  "ENGRASADOR", "CAUCHERO", "MECÁNICO DE GASOLINA DE 2da.", "SOLDADOR DE 3ra.",
-  "LATONERO DE 2da.", "INSTALADOR ELECTRICOMECANICO DE 2da.", "OPERADOR EQUIPO DE SANDBLASTING",
-  "MAQUINISTA DE CONCRETO de 1ra.", "OPERADOR DE PLANTA FIJA DE 1ra.", "CHOFER DE 2da. (DE 3 A 8 TONS)",
-  "OPERADOR DE PALA HASTA 1YARDA CUB.", "MECANICO DE GASOLINA DE 1ra.", "SOLDADOR DE 2da.",
-  "OPERADOR DE PAVIMENTADORA", "ALBAÑIL DE 1ra.", "CARPINTERO DE 1ra.", "CABILLERO DE 1ra.",
-  "PLOMERO DE 1ra.", "ELECTRICISTA DE 1ra.", "GRANITERO DE 1ra.", "PINTOR DE 1ra.",
-  "IMPERMEABILIZADOR DE 1ra.", "CHOFER DE 1ra. (DE 8 A 15 TONS)", "OPERADOR DE EQUIPO PESADO DE 2da.",
-  "TRACTORISTA DE 2da.", "OPERADOR DE MOTOTRAILLA DE 2da.", "OPERADOR DE MOTONIVELADORA DE 2da.",
-  "OPERADOR DE GRUA (GRUERO) DE 2da.", "MECANICO EQUIPO PESADO DE 2da.", "OPERADOR MAQUINAS-HERRAMIENTAS 2da.",
-  "SOLDADOR DE 1ra.", "TUBERO FABRICADOR", "MONTADOR", "LATONERO DE 1ra.",
-  "INSTALADOR ELECTRICOMECANICO DE 1ra.", "LINIERO DE 1ra.", "ALBAÑIL REFRACTARIO",
-  "DEPOSITARIO", "DUCTERO", "ARMADOR METALICO", "MAESTRO CARPINTERO DE 2da.",
-  "CHOFER DE CAMIÓN MAS DE 15 TONS.", "CHOFER DE GANDOLA DE 2da. (DE 15-40T)",
-  "CHOFER DE CAMIÓN MEZCLADOR", "OPERADOR DE PALA MAS 1YARDA CUB. DE 2da.", "PROYECTADOR DE CONCRETO",
-  "CHOFER DE VOLTEO DE 30 O MAS TONELADAS", "MAESTRO ALBAÑIL", "MAESTRO CARPINTERO DE 1ra.",
-  "MAESTRO CABILLERO", "MAESTRO PLOMERO DE 1ra.", "MAESTRO ELECTRICISTA", "MAESTRO GRANITERO",
-  "MAESTRO PINTOR", "MAESTRO IMPERMEABILIZADOR", "MAESTRO DE OBRA DE 2da.",
-  "CHOFER DE GANDOLA DE 1ra. (TODO TON.)", "DINAMITERO", "CAPORAL DE EQUIPO",
-  "MAESTRO DE OBRAS ELECTROMECANICAS", "ALINEADOR DE GRUA (REGGE)", "MINERO", "MAESTRO DE VOLADURAS",
-  "OPERADOR DE EQUIPO PESADO de 1ra.", "TRACTORISTA DE 1ra.", "OPERADOR DE MOTOTRAILLA DE 1ra.",
-  "OPERADOR DE PALA MAS 1YARDA CUB. DE 1ra.", "OPERADOR DE MOTONIVELADORA DE 1ra.",
-  "OPERADOR DE GRÚA (GRUERO) DE 1ra.", "MECÁNICO EQUIPO PESADO DE 1ra.", "OPERADOR MÁQUINAS-HERRAMIENTAS 1ra.",
-  "OPERADOR DE PLANTA", "OPERADOR DE ALIVA", "MAESTRO DE OBRA de 1ra.", "MAESTRO MECÁNICO"
-];
+
+
+const SectionHeader = ({ icon, title, color = "text-primary" }: { icon: string, title: string, color?: string }) => (
+  <h3 className={`text-xs font-black uppercase tracking-[0.2em] ${color} flex items-center gap-2 mb-4`}>
+    <span className="material-symbols-outlined text-sm">{icon}</span>
+    {title}
+  </h3>
+);
+
+const FormInput = ({ label, name, value, onChange, placeholder, type = "text", mono = false }: any) => (
+  <div className="space-y-1.5 w-full">
+    <label className="text-[10px] text-slate-500 uppercase font-bold px-1">{label}</label>
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`w-full glass-input rounded-xl px-4 py-3.5 text-sm ${mono ? 'font-mono' : ''}`}
+      placeholder={placeholder}
+    />
+  </div>
+);
+
+const KoreDateInput = ({ label, value, onChange, required }: { label: string, value: string, onChange: (v: string) => void, required?: boolean }) => {
+  return (
+    <div className="space-y-1.5 w-full">
+      <label className="text-[10px] text-slate-500 uppercase font-bold px-1">{label} {required && '*'}</label>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full glass-input rounded-xl px-4 py-3.5 text-sm font-mono appearance-none bg-stone-900 border-white/5 text-stone-200"
+        required={required}
+      />
+    </div>
+  );
+};
 
 interface WorkerFormProps {
   worker?: Worker | any;
@@ -48,13 +55,13 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
     secondName: worker?.second_name || worker?.secondName || '',
     firstSurname: worker?.first_surname || worker?.firstSurname || '',
     secondSurname: worker?.second_surname || worker?.secondSurname || '',
-    idNumber: worker?.id_number || worker?.idNumber || '',
-    age: worker?.age || '',
+    idType: worker?.id_type || ((worker?.id_number || worker?.idNumber || '').startsWith('E') ? 'E' : 'V'),
+    idNumber: worker?.id_number || ((worker?.id_number || worker?.idNumber || '').replace(/^[VE]-/, '')),
     civilStatus: worker?.civil_status || worker?.civilStatus || '',
     birthPlace: worker?.birth_place || worker?.birthPlace || '',
-    birthCountry: worker?.birth_country || worker?.birthCountry || '',
+    birthCountry: worker?.birth_country || worker?.birthCountry || 'Venezuela',
     dob: worker?.dob || '',
-    nationality: worker?.nationality || '',
+    nationality: worker?.nationality || 'Venezolano/a',
     cellPhone: worker?.cell_phone || worker?.cellPhone || '',
     homePhone: worker?.home_phone || worker?.homePhone || '',
     email: worker?.email || '',
@@ -65,12 +72,12 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
     status: worker?.status || 'PENDING',
     photo: worker?.photo || '',
     idPhoto: worker?.id_photo || worker?.idPhoto || '',
-    project_id: worker?.project_id || null,
-    criminalRecords: worker?.criminal_records || worker?.criminalRecords || { hasRecords: false, issuedBy: '', place: '', date: '' },
-    education: worker?.education || { canRead: true, primary: '', secondary: '', technical: '', superior: '', currentProfession: '' },
-    union: worker?.union || { federation: '', position: '' },
-    medical: worker?.medical || { hasExam: false, performedBy: '', bloodType: '', diseases: '', incapacities: '' },
-    sizes: worker?.sizes || { weight: '', stature: '', shirt: '', pants: '', overalls: '', boots: '', observations: '' },
+    project_id: worker?.current_project_id || worker?.project_id || null,
+    criminalRecords: worker?.criminal_records_json || worker?.criminal_records || worker?.criminalRecords || { hasRecords: false, issuedBy: '', place: '', date: '' },
+    education: worker?.education_json || worker?.education || { canRead: true, primary: '', secondary: '', technical: '', superior: '', currentProfession: '' },
+    union: worker?.union_json || worker?.union || { federation: '', position: '' },
+    medical: worker?.medical_json || worker?.medical || { hasExam: false, performedBy: '', bloodType: '', diseases: '', incapacities: '' },
+    sizes: worker?.sizes_json || worker?.sizes || { weight: '', stature: '', shirt: '', pants: '', overalls: '', boots: '', observations: '' },
     dependents: worker?.dependents || [],
     experience: worker?.experience || []
   });
@@ -118,8 +125,8 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
         second_name: formData.secondName,
         first_surname: formData.firstSurname,
         second_surname: formData.secondSurname,
+        id_type: formData.idType,
         id_number: formData.idNumber,
-        age: parseInt(formData.age) || null,
         civil_status: formData.civilStatus,
         birth_place: formData.birthPlace,
         birth_country: formData.birthCountry,
@@ -135,12 +142,12 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
         status: formData.status,
         photo: formData.photo,
         id_photo: formData.idPhoto,
-        project_id: formData.project_id,
-        criminal_records: formData.criminalRecords,
-        education: formData.education,
-        union: formData.union,
-        medical: formData.medical,
-        sizes: formData.sizes,
+        current_project_id: formData.project_id,
+        criminal_records_json: formData.criminalRecords,
+        education_json: formData.education,
+        union_json: formData.union,
+        medical_json: formData.medical,
+        sizes_json: formData.sizes,
         // Relations handled separately or via JSONB as per schema
       };
 
@@ -159,7 +166,13 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
       }
 
       if (error) throw error;
-      onNavigate('WORKERS', { id: formData.project_id });
+
+      // Si el trabajador está pendiente, al guardar vamos a la revisión de contratación
+      if (formData.status === 'PENDING' || formData.status === 'PENDING_REVIEW') {
+        onNavigate('HIRING_REVIEW', { ...worker, ...workerData, id: worker?.id || null });
+      } else {
+        onNavigate('WORKERS', { id: formData.project_id });
+      }
     } catch (error: any) {
       console.error('Error saving worker:', error);
       alert('Error al guardar el trabajador: ' + error.message);
@@ -167,27 +180,6 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
       setLoading(false);
     }
   };
-
-  const SectionHeader = ({ icon, title, color = "text-primary" }: { icon: string, title: string, color?: string }) => (
-    <h3 className={`text-xs font-black uppercase tracking-[0.2em] ${color} flex items-center gap-2 mb-4`}>
-      <span className="material-symbols-outlined text-sm">{icon}</span>
-      {title}
-    </h3>
-  );
-
-  const FormInput = ({ label, name, value, onChange, placeholder, type = "text", mono = false }: any) => (
-    <div className="space-y-1.5 flex-1">
-      <label className="text-[10px] text-slate-500 uppercase font-bold px-1">{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full glass-input rounded-xl px-4 py-3.5 text-sm ${mono ? 'font-mono' : ''}`}
-        placeholder={placeholder}
-      />
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-950 pb-32">
@@ -213,34 +205,117 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
         <section className="glass-card rounded-[2rem] p-6 space-y-6">
           <SectionHeader icon="badge" title="I. Identificación del Trabajador" />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="w-full h-40 rounded-2xl glass-card border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden hover:border-primary/50 transition-colors">
-              <span className="material-symbols-outlined text-slate-600 text-3xl mb-1">face</span>
-              <p className="text-[8px] uppercase font-black tracking-widest text-slate-500">Foto Perfil</p>
-              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" capture="user" />
+          <div className="flex flex-col gap-4">
+            <div
+              onClick={() => document.getElementById('upload-photo')?.click()}
+              className="w-full h-80 rounded-2xl glass-card border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden hover:border-primary/50 transition-all cursor-pointer group"
+            >
+              {formData.photo ? (
+                <img src={formData.photo} alt="Perfil" className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center bg-white w-full h-full justify-center">
+                  <span className="material-symbols-outlined text-stone-300 text-3xl">face</span>
+                  <p className="text-[6px] uppercase font-black tracking-widest text-stone-400 mt-1">Fondo Blanco</p>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <span className="material-symbols-outlined text-white">add_a_photo</span>
+              </div>
+              <input
+                id="upload-photo"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                capture="user"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setLoading(true);
+                    try {
+                      const path = `personal/${Date.now()}-${file.name}`;
+                      const url = await dataService.uploadFile('inventory-assets', path, file);
+                      handleInputChange('photo', url);
+                    } catch (error) {
+                      console.error('Photo upload error:', error);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }}
+              />
             </div>
-            <div className="w-full h-40 rounded-2xl glass-card border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden hover:border-primary/50 transition-colors">
-              <span className="material-symbols-outlined text-slate-600 text-3xl mb-1">style</span>
-              <p className="text-[8px] uppercase font-black tracking-widest text-slate-500">Foto Cédula</p>
-              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+            <div
+              onClick={() => document.getElementById('upload-id')?.click()}
+              className="w-full h-40 rounded-2xl glass-card border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden hover:border-primary/50 transition-all cursor-pointer group"
+            >
+              {formData.idPhoto ? (
+                <img src={formData.idPhoto} alt="Cédula" className="w-full h-full object-cover" />
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-slate-600 text-3xl mb-1">style</span>
+                  <p className="text-[8px] uppercase font-black tracking-widest text-slate-500">Foto Cédula</p>
+                </>
+              )}
+              <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <span className="material-symbols-outlined text-white">add_a_photo</span>
+              </div>
+              <input
+                id="upload-id"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setLoading(true);
+                    try {
+                      const path = `cedulas/${Date.now()}-${file.name}`;
+                      const url = await dataService.uploadFile('inventory-assets', path, file);
+                      handleInputChange('idPhoto', url);
+                    } catch (error) {
+                      console.error('ID Photo upload error:', error);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }}
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <FormInput label="Primer Nombre" value={formData.firstName} onChange={(v: string) => handleInputChange('firstName', v)} />
             <FormInput label="Segundo Nombre" value={formData.secondName} onChange={(v: string) => handleInputChange('secondName', v)} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <FormInput label="Primer Apellido" value={formData.firstSurname} onChange={(v: string) => handleInputChange('firstSurname', v)} />
             <FormInput label="Segundo Apellido" value={formData.secondSurname} onChange={(v: string) => handleInputChange('secondSurname', v)} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <FormInput label="Cédula de Identidad" mono value={formData.idNumber} onChange={(v: string) => handleInputChange('idNumber', v)} placeholder="V-0000000" />
-            <FormInput label="Edad" type="number" value={formData.age} onChange={(v: string) => handleInputChange('age', v)} />
+          <div className="space-y-6">
+            <div className="space-y-1.5 w-full">
+              <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Cédula de Identidad</label>
+              <div className="flex gap-2">
+                <select
+                  value={formData.idType}
+                  onChange={(e) => handleInputChange('idType', e.target.value)}
+                  className="w-20 glass-input rounded-xl px-2 py-3.5 text-sm font-black bg-stone-900 border-white/5"
+                >
+                  <option value="V">V-</option>
+                  <option value="E">E-</option>
+                </select>
+                <input
+                  type="text"
+                  value={formData.idNumber}
+                  onChange={(e) => handleInputChange('idNumber', e.target.value)}
+                  className="flex-1 glass-input rounded-xl px-4 py-3.5 text-sm font-mono"
+                  placeholder="00000000"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
+          <div className="space-y-6">
+            <div className="space-y-1.5 w-full">
               <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Estado Civil</label>
               <select
                 value={formData.civilStatus}
@@ -254,20 +329,38 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
                 <option value="Viudo">Viudo/a</option>
               </select>
             </div>
-            <FormInput label="Fecha de Nac." type="date" value={formData.dob} onChange={(v: string) => handleInputChange('dob', v)} />
+            <KoreDateInput label="Fecha de Nac." value={formData.dob} onChange={(v: string) => handleInputChange('dob', v)} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <FormInput label="Lugar de Nacimiento" value={formData.birthPlace} onChange={(v: string) => handleInputChange('birthPlace', v)} />
-            <FormInput label="País de Nacimiento" value={formData.birthCountry} onChange={(v: string) => handleInputChange('birthCountry', v)} />
+            <div className="space-y-1.5 flex-1">
+              <label className="text-[10px] text-slate-500 uppercase font-bold px-1">País de Nacimiento</label>
+              <select
+                value={formData.birthCountry}
+                onChange={(e) => handleInputChange('birthCountry', e.target.value)}
+                className="w-full glass-input rounded-xl px-4 py-3.5 text-sm bg-stone-900 border-white/5"
+              >
+                {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormInput label="Nacionalidad" value={formData.nationality} onChange={(v: string) => handleInputChange('nationality', v)} />
+          <div className="space-y-6">
+            <div className="space-y-1.5 flex-1">
+              <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Nacionalidad</label>
+              <select
+                value={formData.nationality}
+                onChange={(e) => handleInputChange('nationality', e.target.value)}
+                className="w-full glass-input rounded-xl px-4 py-3.5 text-sm bg-stone-900 border-white/5"
+              >
+                {NATIONALITIES.map(n => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
             <FormInput label="Celular" type="tel" value={formData.cellPhone} onChange={(v: string) => handleInputChange('cellPhone', v)} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <FormInput label="Tel. Habitación" type="tel" value={formData.homePhone} onChange={(v: string) => handleInputChange('homePhone', v)} />
             <FormInput label="Correo Electrónico" type="email" value={formData.email} onChange={(v: string) => handleInputChange('email', v)} />
           </div>
@@ -282,7 +375,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
             />
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col gap-6">
             <div className="flex-1 space-y-2">
               <label className="text-[10px] text-slate-500 uppercase font-bold px-1">Inscripción IVSS</label>
               <div className="flex gap-2">
@@ -350,10 +443,8 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
             </div>
           </div>
           <FormInput label="Expedido por" value={formData.criminalRecords.issuedBy} onChange={(v: string) => handleInputChange('criminalRecords.issuedBy', v)} placeholder="Ej. Ministerio de Relaciones Interiores" />
-          <div className="grid grid-cols-2 gap-4">
-            <FormInput label="Lugar" value={formData.criminalRecords.place} onChange={(v: string) => handleInputChange('criminalRecords.place', v)} />
-            <FormInput label="Fecha Expedición" type="date" value={formData.criminalRecords.date} onChange={(v: string) => handleInputChange('criminalRecords.date', v)} />
-          </div>
+          <FormInput label="Lugar" value={formData.criminalRecords.place} onChange={(v: string) => handleInputChange('criminalRecords.place', v)} />
+          <KoreDateInput label="Fecha Expedición" value={formData.criminalRecords.date} onChange={(v: string) => handleInputChange('criminalRecords.date', v)} />
         </section>
 
         {/* IV. Instrucción y Capacitación */}
@@ -373,11 +464,11 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <FormInput label="Primaria" value={formData.education.primary} onChange={(v: string) => handleInputChange('education.primary', v)} placeholder="Escuela/Estado" />
             <FormInput label="Secundaria" value={formData.education.secondary} onChange={(v: string) => handleInputChange('education.secondary', v)} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <FormInput label="Técnica" value={formData.education.technical} onChange={(v: string) => handleInputChange('education.technical', v)} />
             <FormInput label="Superior" value={formData.education.superior} onChange={(v: string) => handleInputChange('education.superior', v)} />
           </div>
@@ -427,11 +518,11 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
         {/* VII. Peso y Medidas */}
         <section className="glass-card rounded-[2rem] p-6 space-y-4">
           <SectionHeader icon="straighten" title="Peso y Medidas (Dotación)" color="text-indigo-400" />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
             <FormInput label="Peso (Kg)" value={formData.sizes.weight} onChange={(v: string) => handleInputChange('sizes.weight', v)} />
             <FormInput label="Estatura (cm)" value={formData.sizes.stature} onChange={(v: string) => handleInputChange('sizes.stature', v)} />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-4">
             <FormInput label="Camisa" value={formData.sizes.shirt} onChange={(v: string) => handleInputChange('sizes.shirt', v)} placeholder="S, M, L..." />
             <FormInput label="Pantalón" value={formData.sizes.pants} onChange={(v: string) => handleInputChange('sizes.pants', v)} />
             <FormInput label="Bragas" value={formData.sizes.overalls} onChange={(v: string) => handleInputChange('sizes.overalls', v)} />
@@ -467,7 +558,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
                     handleInputChange('dependents', newDeps);
                   }}
                 />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <input
                     className="w-full glass-input rounded-xl px-4 py-2.5 text-xs"
                     placeholder="Parentesco"
@@ -478,13 +569,12 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
                       handleInputChange('dependents', newDeps);
                     }}
                   />
-                  <input
-                    type="date"
-                    className="w-full glass-input rounded-xl px-4 py-2.5 text-xs"
+                  <KoreDateInput
+                    label="F. Nacimiento"
                     value={dep.dob}
-                    onChange={(e) => {
+                    onChange={(v) => {
                       const newDeps = [...formData.dependents];
-                      newDeps[index].dob = e.target.value;
+                      newDeps[index].dob = v;
                       handleInputChange('dependents', newDeps);
                     }}
                   />
@@ -514,7 +604,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
             {formData.experience.map((exp: any, index: number) => (
               <div key={index} className="p-5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-4">
                 <p className="text-[8px] font-black uppercase text-slate-500">Experiencia {index + 1}</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <input
                     className="w-full glass-input rounded-xl px-4 py-2.5 text-xs"
                     placeholder="Empresa o Patrono"
@@ -536,7 +626,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
                     }}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <input
                     className="w-full glass-input rounded-xl px-4 py-2.5 text-xs"
                     placeholder="Oficio o cargo"
@@ -558,22 +648,20 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
                     }}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-6">
                   <div className="space-y-1">
-                    <label className="text-[8px] text-slate-500 uppercase font-bold px-1">Fecha Retiro</label>
-                    <input
-                      type="date"
-                      className="w-full glass-input rounded-xl px-4 py-2.5 text-xs"
+                    <KoreDateInput
+                      label="Fecha Retiro"
                       value={exp.departureDate}
-                      onChange={(e) => {
+                      onChange={(v) => {
                         const newExp = [...formData.experience];
-                        newExp[index].departureDate = e.target.value;
+                        newExp[index].departureDate = v;
                         handleInputChange('experience', newExp);
                       }}
                     />
                   </div>
                   <input
-                    className="w-full glass-input rounded-xl px-4 py-2.5 text-xs mt-4"
+                    className="w-full glass-input rounded-xl px-4 py-3.5 text-sm"
                     placeholder="Motivo del retiro"
                     value={exp.reason}
                     onChange={(e) => {
@@ -597,8 +685,12 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
             disabled={loading}
             className="w-full bg-primary text-white font-black py-5 rounded-[2rem] shadow-2xl shadow-primary/30 apple-button uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined">how_to_reg</span>
-            {worker?.id ? 'Guardar Cambios' : 'Finalizar y Guardar Registro'}
+            <span className="material-symbols-outlined">
+              {formData.status === 'PENDING' || formData.status === 'PENDING_REVIEW' ? 'fact_check' : 'how_to_reg'}
+            </span>
+            {formData.status === 'PENDING' || formData.status === 'PENDING_REVIEW'
+              ? 'Verificar Planilla y Continuar Alta'
+              : worker?.id ? 'Guardar Cambios' : 'Finalizar y Guardar Registro'}
           </button>
         </div>
       </main>

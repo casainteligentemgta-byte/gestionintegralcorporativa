@@ -1,13 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="es" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KORE ERP - Legal Management</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -39,13 +41,23 @@
                 @apply bg-stone-950 text-slate-100 antialiased;
                 font-family: 'Inter', sans-serif;
             }
+            /* Global Dark Mode Fix for standard browser elements */
+            input, select, textarea, option {
+                color-scheme: dark !important;
+                background-color: #1c1917 !important; /* stone-900 */
+                color: #f8fafc !important; /* slate-50 */
+            }
+            select option {
+                background-color: #1c1917 !important;
+                color: #f8fafc !important;
+            }
         }
         @layer components {
             .glass-card {
                 @apply bg-white/5 backdrop-blur-xl border border-white/10;
             }
             .glass-input {
-                @apply bg-white/[0.03] backdrop-blur-md border border-white/10 transition-all duration-200;
+                @apply bg-white/[0.03] backdrop-blur-md border border-white/10 transition-all duration-200 text-white !important;
             }
             .glass-input:focus {
                 @apply bg-white/[0.08] border-primary/50 outline-none ring-4 ring-primary/10;
@@ -65,19 +77,12 @@
             .no-print { display: none !important; }
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
-  }
-}
-</script>
+
 </head>
+
 <body>
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
