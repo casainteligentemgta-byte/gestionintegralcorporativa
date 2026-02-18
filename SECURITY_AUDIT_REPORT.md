@@ -109,7 +109,7 @@ GEMINI_API_KEY=AIzaSyDFIXhCfSn6sbVJKyyxqZ15dIcOmNCn5bA
 // utils/security.ts
 const ALLOWED_REDIRECT_URLS = [
   'http://localhost:5173',
-  'https://gestionintegralcorporativa.netlify.app',
+  'https://gestionintegralcorporativa.vercel.app',
 ];
 
 export const getSafeRedirectUrl = (): string => {

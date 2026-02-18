@@ -9,8 +9,8 @@
 const ALLOWED_REDIRECT_URLS = [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://gestionintegralcorporativa.netlify.app',
-    // Add your production domain here
+    'https://gestionintegralcorporativa.vercel.app',
+    'https://gestionintegralcorporativa-dw6qu6lle.vercel.app',
 ];
 
 /**
