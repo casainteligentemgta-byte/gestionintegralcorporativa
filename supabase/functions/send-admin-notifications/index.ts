@@ -10,164 +10,164 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // Configuración de SMTP (usando Gmail)
 const SMTP_CONFIG = {
-    host: 'smtp.gmail.com',
-    port: 587,
-    username: Deno.env.get('GMAIL_USER') || 'casainteligentemgta@gmail.com',
-    password: Deno.env.get('GMAIL_APP_PASSWORD') || '', // App Password de Gmail
-    from: 'KORE System <casainteligentemgta@gmail.com>',
-    to: 'casainteligentemgta@gmail.com'
+  host: 'smtp.gmail.com',
+  port: 587,
+  username: Deno.env.get('GMAIL_USER') || 'casainteligentemgta@gmail.com',
+  password: Deno.env.get('GMAIL_APP_PASSWORD') || '', // App Password de Gmail
+  from: 'KORE System <casainteligentemgta@gmail.com>',
+  to: 'casainteligentemgta@gmail.com'
 }
 
 serve(async (req) => {
-    try {
-        // Crear cliente de Supabase con service role
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-            {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
-                }
-            }
-        )
-
-        // Obtener notificaciones pendientes
-        const { data: notifications, error: fetchError } = await supabaseClient
-            .from('admin_notifications')
-            .select('*')
-            .eq('sent', false)
-            .order('created_at', { ascending: true })
-            .limit(10) // Procesar máximo 10 a la vez
-
-        if (fetchError) {
-            throw new Error(`Error fetching notifications: ${fetchError.message}`)
+  try {
+    // Crear cliente de Supabase con service role
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
         }
+      }
+    )
 
-        if (!notifications || notifications.length === 0) {
-            return new Response(
-                JSON.stringify({ message: 'No pending notifications' }),
-                {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json' }
-                }
-            )
-        }
+    // Obtener notificaciones pendientes
+    const { data: notifications, error: fetchError } = await supabaseClient
+      .from('admin_notifications')
+      .select('*')
+      .eq('sent', false)
+      .order('created_at', { ascending: true })
+      .limit(10) // Procesar máximo 10 a la vez
 
-        console.log(`Processing ${notifications.length} notifications...`)
-
-        // Enviar email por cada notificación
-        const results = []
-        for (const notification of notifications) {
-            try {
-                // Enviar email usando API de Resend (alternativa a SMTP)
-                const emailSent = await sendEmailViaResend(notification)
-
-                if (emailSent) {
-                    // Marcar como enviada
-                    await supabaseClient
-                        .from('admin_notifications')
-                        .update({
-                            sent: true,
-                            sent_at: new Date().toISOString()
-                        })
-                        .eq('id', notification.id)
-
-                    results.push({
-                        id: notification.id,
-                        status: 'sent',
-                        email: notification.user_email
-                    })
-                } else {
-                    results.push({
-                        id: notification.id,
-                        status: 'failed',
-                        email: notification.user_email
-                    })
-                }
-            } catch (error) {
-                console.error(`Error sending notification ${notification.id}:`, error)
-                results.push({
-                    id: notification.id,
-                    status: 'error',
-                    email: notification.user_email,
-                    error: error.message
-                })
-            }
-        }
-
-        return new Response(
-            JSON.stringify({
-                message: `Processed ${notifications.length} notifications`,
-                results
-            }),
-            {
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            }
-        )
-
-    } catch (error) {
-        console.error('Edge Function Error:', error)
-        return new Response(
-            JSON.stringify({ error: error.message }),
-            {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            }
-        )
+    if (fetchError) {
+      throw new Error(`Error fetching notifications: ${fetchError.message}`)
     }
+
+    if (!notifications || notifications.length === 0) {
+      return new Response(
+        JSON.stringify({ message: 'No pending notifications' }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log(`Processing ${notifications.length} notifications...`)
+
+    // Enviar email por cada notificación
+    const results = []
+    for (const notification of notifications) {
+      try {
+        // Enviar email usando API de Resend (alternativa a SMTP)
+        const emailSent = await sendEmailViaResend(notification)
+
+        if (emailSent) {
+          // Marcar como enviada
+          await supabaseClient
+            .from('admin_notifications')
+            .update({
+              sent: true,
+              sent_at: new Date().toISOString()
+            })
+            .eq('id', notification.id)
+
+          results.push({
+            id: notification.id,
+            status: 'sent',
+            email: notification.user_email
+          })
+        } else {
+          results.push({
+            id: notification.id,
+            status: 'failed',
+            email: notification.user_email
+          })
+        }
+      } catch (error) {
+        console.error(`Error sending notification ${notification.id}:`, error)
+        results.push({
+          id: notification.id,
+          status: 'error',
+          email: notification.user_email,
+          error: error.message
+        })
+      }
+    }
+
+    return new Response(
+      JSON.stringify({
+        message: `Processed ${notifications.length} notifications`,
+        results
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+
+  } catch (error) {
+    console.error('Edge Function Error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+  }
 })
 
 // ============================================================================
 // Función para enviar email usando Resend API
 // ============================================================================
 async function sendEmailViaResend(notification: any): Promise<boolean> {
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 
-    if (!RESEND_API_KEY) {
-        console.error('RESEND_API_KEY not configured')
-        return false
+  if (!RESEND_API_KEY) {
+    console.error('RESEND_API_KEY not configured')
+    return false
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'KORE System <onboarding@resend.dev>', // Cambiar cuando configures dominio
+        to: ['casainteligentemgta@gmail.com'],
+        subject: '🔔 Nuevo Usuario Registrado - Requiere Activación',
+        html: generateEmailHTML(notification)
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      console.error('Resend API Error:', error)
+      return false
     }
 
-    try {
-        const response = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: 'KORE System <onboarding@resend.dev>', // Cambiar cuando configures dominio
-                to: ['casainteligentemgta@gmail.com'],
-                subject: '🔔 Nuevo Usuario Registrado - Requiere Activación',
-                html: generateEmailHTML(notification)
-            })
-        })
+    const result = await response.json()
+    console.log('Email sent successfully:', result)
+    return true
 
-        if (!response.ok) {
-            const error = await response.text()
-            console.error('Resend API Error:', error)
-            return false
-        }
-
-        const result = await response.json()
-        console.log('Email sent successfully:', result)
-        return true
-
-    } catch (error) {
-        console.error('Error sending email via Resend:', error)
-        return false
-    }
+  } catch (error) {
+    console.error('Error sending email via Resend:', error)
+    return false
+  }
 }
 
 // ============================================================================
 // Generar HTML del email
 // ============================================================================
 function generateEmailHTML(notification: any): string {
-    const dashboardUrl = Deno.env.get('DASHBOARD_URL') || 'https://tu-app.netlify.app'
+  const dashboardUrl = Deno.env.get('DASHBOARD_URL') || 'https://tu-app.vercel.app'
 
-    return `
+  return `
     <!DOCTYPE html>
     <html>
     <head>
@@ -227,9 +227,9 @@ function generateEmailHTML(notification: any): string {
                             </td>
                             <td style="color: #ffffff; font-size: 14px; font-weight: 500; text-align: right; padding-top: 8px;">
                               ${new Date(notification.created_at).toLocaleString('es-ES', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-    })}
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  })}
                             </td>
                           </tr>
                           <tr>

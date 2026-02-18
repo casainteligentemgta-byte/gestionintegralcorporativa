@@ -133,14 +133,14 @@ const Projects: React.FC<ProjectsProps> = ({ onNavigate }) => {
 
               <div className="p-4 bg-white/[0.02] border-t border-white/5 flex gap-2">
                 <button
-                  onClick={() => onNavigate('WORKERS', project, 'OBRERO')}
+                  onClick={() => onNavigate('WORKERS', project)}
                   className="flex-1 py-3.5 bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl apple-button flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">engineering</span>
                   Obreros
                 </button>
                 <button
-                  onClick={() => onNavigate('WORKERS', project, 'EMPLEADO')}
+                  onClick={() => onNavigate('EMPLOYEES', project)}
                   className="flex-1 py-3.5 bg-white/5 border border-white/10 text-slate-300 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl apple-button flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">badge</span>

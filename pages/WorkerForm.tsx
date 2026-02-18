@@ -187,7 +187,7 @@ const WorkerForm: React.FC<WorkerFormProps> = ({ worker, onNavigate }) => {
         <button onClick={() => onNavigate('WORKERS')} className="text-slate-400 p-1 hover:text-white transition-colors">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        <h1 className="text-2xl font-bold tracking-tight">Plantilla de Empleo</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-emerald-400 uppercase">Registro de Obreros (Construcción)</h1>
       </header>
 
       <main className="flex-1 p-6 space-y-10 max-w-lg mx-auto w-full relative">

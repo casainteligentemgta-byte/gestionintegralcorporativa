@@ -209,7 +209,7 @@ const Workers: React.FC<WorkersProps> = ({ project, type, onNavigate }) => {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="pt-12 pb-6 px-6 sticky top-0 z-40 bg-stone-950/80 backdrop-blur-lg border-b border-white/5">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => onNavigate(project ? 'PROJECTS' : 'DASHBOARD')}
@@ -219,7 +219,7 @@ const Workers: React.FC<WorkersProps> = ({ project, type, onNavigate }) => {
             </button>
             <div className="flex flex-col">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary leading-none mb-1">
-                {type === 'EMPLEADO' ? 'Empleados' : type === 'PENDING_REVIEW' ? 'POSTULACIONES' : 'OBREROS'}
+                {type === 'PENDING_REVIEW' ? 'POSTULACIONES' : 'NÓMINA OPERATIVA'}
               </p>
               <h1 className="text-xl font-black tracking-tighter text-white leading-tight">
                 {type === 'PENDING_REVIEW' ? 'PENDIENTES DE REVISIÓN' : 'DIMAQUINAS, c.a'}
@@ -229,6 +229,7 @@ const Workers: React.FC<WorkersProps> = ({ project, type, onNavigate }) => {
               )}
             </div>
           </div>
+
           <div className="flex gap-2">
             {selectedWorkers.size > 0 && (
               <button
@@ -285,6 +286,23 @@ const Workers: React.FC<WorkersProps> = ({ project, type, onNavigate }) => {
             </button>
           </div>
         </div>
+
+        {/* Switcher Personal */}
+        {type !== 'PENDING_REVIEW' && (
+          <div className="flex p-0.5 bg-white/5 rounded-xl border border-white/10 w-44 mb-4">
+            <button
+              className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-primary text-black shadow-lg shadow-primary/20"
+            >
+              Obreros
+            </button>
+            <button
+              onClick={() => onNavigate('EMPLOYEES', project)}
+              className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest text-stone-500 hover:text-white transition-all"
+            >
+              Empleados
+            </button>
+          </div>
+        )}
 
         {showRecruitmentLink && project && (
           <div className="mb-6 animate-in zoom-in-95 duration-300">

@@ -360,7 +360,10 @@ export const dataService = {
                     created_at,
                     compra:Facturas_Compras (
                         numero_factura,
-                        fecha
+                        fecha,
+                        proveedor:Proveedores (
+                            nombre
+                        )
                     )
                 )
             `)
@@ -383,7 +386,8 @@ export const dataService = {
             return {
                 ...item,
                 last_purchase_date: lastPurchase?.compra?.fecha || null,
-                last_invoice_number: lastPurchase?.compra?.numero_factura || 'N/A'
+                last_invoice_number: lastPurchase?.compra?.numero_factura || 'N/A',
+                last_supplier_name: lastPurchase?.compra?.proveedor?.nombre || 'N/A'
             };
         });
 
@@ -493,7 +497,7 @@ export const dataService = {
         guia_remision?: string;
         guia_archivo_url?: string;
         placa_vehiculo?: string;
-        items: Array<{ material_id: string; cantidad: number; precio: number; cantidad_recibida?: number; conformidad_calidad?: string; observaciones?: string }>;
+        items: Array<{ material_id: string | null; cantidad: number; precio: number; cantidad_recibida?: number; conformidad_calidad?: string; observaciones?: string }>;
     }) {
         const { data: userData } = await supabase.auth.getUser();
 
@@ -730,8 +734,12 @@ export const dataService = {
     },
 
     // Employees
-    async getEmployees() {
-        const { data, error } = await supabase.from('empleados').select('*');
+    async getEmployees(projectId?: string) {
+        let query = supabase.from('empleados').select('*');
+        if (projectId) {
+            query = query.eq('project_id', projectId);
+        }
+        const { data, error } = await query;
         if (error) throw error;
         return data;
     },
@@ -742,7 +750,7 @@ export const dataService = {
         clase_movimiento: '101' | '501' | '201' | '311'; // 311 Added for Transfer
         referencia_externa?: string;
         observaciones?: string;
-        items: Array<{ material_id: string; cantidad: number; importe_total: number }>;
+        items: Array<{ material_id: string | null; cantidad: number; importe_total: number }>;
     }) {
         const { data: userData } = await supabase.auth.getUser();
 
@@ -816,15 +824,18 @@ export const dataService = {
         const base64 = await base64Promise;
         const mimeType = blob.type || "image/jpeg";
 
-        const prompt = `Analiza esta factura y devuelve los datos en JSON:
+        const prompt = `Actúa como el motor de procesamiento de documentos de Google NotebookLM.
+        Analiza esta imagen de factura con precisión contable y extrae los siguientes datos en formato JSON estricto:
         {
-          "proveedor_nombre": "string",
-          "proveedor_rif": "string",
-          "numero_factura": "string",
-          "total_neto": number,
+          "proveedor_nombre": "string (nombre comercial completo)",
+          "proveedor_rif": "string (identificador fiscal)",
+          "numero_factura": "string (número de control o factura)",
+          "total_neto": number (monto total a pagar, sin símbolos de moneda),
+          "fecha_emision": "string (YYYY-MM-DD)",
           "items": [{"nombre": "string", "cantidad": number, "precio_unitario": number}]
         }
-        Solo devuelve el JSON, sin markdown.`;
+        Si algún campo no es visible o es ilegible, usa null o "NO VISIBLE".
+        Solo devuelve el objeto JSON, sin markdown ni texto adicional.`;
 
         // Usar gemini-1.5-flash (versión estable)
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
@@ -864,6 +875,65 @@ export const dataService = {
             console.error("Error parseando JSON extraído:", jsonMatch[0]);
             throw new Error("Error de formato en la respuesta de la IA.");
         }
+    },
+
+    async analyzeLegalDocument(fileUrl: string) {
+        const apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+        if (!apiKey) throw new Error("VITE_GEMINI_API_KEY no configurada");
+
+        const fileRes = await fetch(fileUrl);
+        const blob = await fileRes.blob();
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                resolve(base64String.split(',')[1]);
+            };
+            reader.onerror = reject;
+        });
+        reader.readAsDataURL(blob);
+        const base64 = await base64Promise;
+        const mimeType = blob.type.includes('pdf') ? 'application/pdf' : 'image/jpeg';
+
+        const prompt = `Actúa como Themis, un asistente legal experto potenciado por Google NotebookLM.
+        Analiza este documento legal con profundidad analítica y extrae la siguiente información estructurada en JSON:
+        {
+          "tipo_documento": "string (Contrato, Acta, Notificación, etc)",
+          "partes_involucradas": ["lista de nombres o entidades"],
+          "fecha_efectiva": "string (fecha encontrada o 'No especificada')",
+          "objetivo_principal": "string (resumen de 1 linea)",
+          "clausulas_criticas": ["lista de obligaciones o puntos importantes, max 5"],
+          "riesgos_identificados": ["lista de posibles riesgos legales o financieros, max 3"],
+          "recomendacion": "string (acción sugerida: Revisar, Firmar, Rechazar)"
+        }
+        Solo devuelve el JSON, sin markdown, sin explicaciones extra.`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+        const geminiRes = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inline_data: { mime_type: mimeType, data: base64 } }
+                    ]
+                }]
+            })
+        });
+
+        if (!geminiRes.ok) {
+            const errData = await geminiRes.json();
+            throw new Error(errData.error?.message || "Error en Themis AI");
+        }
+
+        const result = await geminiRes.json();
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+
+        if (!jsonMatch) throw new Error("Themis no pudo estructurar la respuesta legal.");
+        return JSON.parse(jsonMatch[0]);
     },
 
     async verifyIdentityAI(selfieUrl: string, idPhotoUrl: string) {

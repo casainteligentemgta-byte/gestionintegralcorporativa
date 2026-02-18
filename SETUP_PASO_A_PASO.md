@@ -168,12 +168,10 @@ Sigue estos pasos EN ORDEN. Cada paso toma solo unos minutos.
    ```bash
    supabase secrets set RESEND_API_KEY=tu-api-key-aqui
    ```
-   
-   Reemplaza `tu-api-key-aqui` con tu API Key real
 
 2. **Configura la URL del dashboard:**
    ```bash
-   supabase secrets set DASHBOARD_URL=https://gestionintegralcorporativa.netlify.app
+   supabase secrets set DASHBOARD_URL=https://tu-proyecto.vercel.app
    ```
 
 3. **Verifica que se guardaron:**
@@ -302,7 +300,7 @@ supabase link --project-ref iwrowjywohgwvtvdubhp
 
 # 5. Configurar secretos (reemplaza con tus valores)
 supabase secrets set RESEND_API_KEY=tu-api-key-aqui
-supabase secrets set DASHBOARD_URL=https://gestionintegralcorporativa.netlify.app
+supabase secrets set DASHBOARD_URL=https://tu-proyecto.vercel.app
 
 # 6. Desplegar
 supabase functions deploy send-admin-notifications

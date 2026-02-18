@@ -44,6 +44,7 @@ import AccountingDashboard from '@/pages/AccountingDashboard';
 import UserManagement from '@/pages/UserManagement';
 import Employees from '@/pages/Employees';
 import AgentCenter from '@/pages/AgentCenter';
+import EmployeePostulationForm from '@/pages/EmployeePostulationForm';
 import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
@@ -54,7 +55,7 @@ const App: React.FC = () => {
   const [selectedMaterialCategory, setSelectedMaterialCategory] = useState<'MATERIALES' | 'MAQUINARIA' | 'COMBUSTIBLES' | 'EPP'>('MATERIALES');
   const [selectedRequisitionId, setSelectedRequisitionId] = useState<string | null>(null);
   const [workerContext, setWorkerContext] = useState<'OBRERO' | 'EMPLEADO' | 'PENDING_REVIEW' | null>(null);
-  const [recruitmentData, setRecruitmentData] = useState<{ projectId: string, companyId: string } | null>(null);
+  const [recruitmentData, setRecruitmentData] = useState<{ projectId: string, companyId: string, type: 'WORKER' | 'EMPLOYEE' } | null>(null);
   const [selectedMovementCode, setSelectedMovementCode] = useState<'101' | '311' | '501' | '601' | null>(null);
 
   const [inventoryHighlight, setInventoryHighlight] = useState<string | null>(null);
@@ -67,8 +68,13 @@ const App: React.FC = () => {
     const recruitComp = urlParams.get('recruit_comp');
 
     if (recruitProj) {
-      setRecruitmentData({ projectId: recruitProj, companyId: recruitComp || '' });
-      setView('RECRUITMENT_FORM');
+      const type = (urlParams.get('recruit_type') as 'WORKER' | 'EMPLOYEE') || 'WORKER';
+      setRecruitmentData({
+        projectId: recruitProj,
+        companyId: recruitComp || '',
+        type
+      });
+      setView(type === 'EMPLOYEE' ? 'EMPLOYEE_POSTULATION' : 'RECRUITMENT_FORM');
       return;
     }
 
@@ -109,7 +115,7 @@ const App: React.FC = () => {
       setSelectedProject(data || null);
     }
 
-    if (newView === 'WORKERS') {
+    if (newView === 'WORKERS' || newView === 'EMPLOYEES') {
       setSelectedProject(data || null);
       if (context) setWorkerContext(context);
     }
@@ -149,20 +155,10 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    // Check if Supabase is properly configured
     const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (!isSupabaseConfigured && view !== 'LOGIN') {
-      return (
-        <div className="min-h-screen bg-stone-950 flex flex-col items-center justify-center p-8 text-center">
-          <span className="material-symbols-outlined text-red-500 text-6xl mb-4">cloud_off</span>
-          <h2 className="text-white text-xl font-bold mb-2">Error de Configuración</h2>
-          <p className="text-white/60 text-sm max-w-xs">
-            Las credenciales de Supabase no se detectaron.
-            Asegúrate de configurar VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en Netlify y realizar un nuevo "Deploy".
-          </p>
-        </div>
-      );
+    if (!isSupabaseConfigured) {
+      console.warn("⚠️ ADVERTENCIA: Credenciales de Supabase no detectadas. La base de datos no funcionará hasta que se configuren VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.");
     }
 
     switch (view) {
@@ -231,6 +227,8 @@ const App: React.FC = () => {
         return <MovementHistory onNavigate={handleNavigate} />;
       case 'RECRUITMENT_FORM':
         return <RecruitmentForm context={recruitmentData} onNavigate={handleNavigate} />;
+      case 'EMPLOYEE_POSTULATION':
+        return <EmployeePostulationForm context={recruitmentData} onNavigate={handleNavigate} />;
       case 'HIRING_REVIEW':
         return selectedWorker ? (
           <HiringReview key={`review-${selectedWorker.id}`} worker={selectedWorker} onNavigate={handleNavigate} />
@@ -272,7 +270,7 @@ const App: React.FC = () => {
       case 'USER_MANAGEMENT':
         return <UserManagement onNavigate={handleNavigate} />;
       case 'EMPLOYEES':
-        return <Employees onNavigate={handleNavigate} />;
+        return <Employees key={selectedProject?.id || 'corporate'} project={selectedProject} onNavigate={handleNavigate} />;
       case 'AGENT_CENTER':
         return <AgentCenter onNavigate={handleNavigate} />;
       case 'SETTINGS':

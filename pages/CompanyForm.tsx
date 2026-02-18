@@ -68,11 +68,39 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ company, onNavigate }) => {
           .eq('id', company.id);
         error = updateError;
       } else {
-        // Insert
-        const { error: insertError } = await supabase
-          .from('companies')
-          .insert([companyData]);
-        error = insertError;
+        // Insert - Try RPC first to ensure assignment (Multi-tenant)
+        let createdId = null;
+        try {
+          const { data: newId, error: rpcError } = await supabase.rpc('create_company_and_assign', {
+            company_name: formData.name,
+            company_rif: formData.rif,
+            company_email: formData.email,
+            company_phone: formData.phone,
+            company_address: formData.address
+          });
+
+          if (!rpcError && newId) {
+            createdId = newId;
+            // Update the rest of the fields that RPC didn't cover
+            const { error: updateErr } = await supabase
+              .from('companies')
+              .update(companyData)
+              .eq('id', newId);
+            if (updateErr) console.error("Error updating details after RPC creation", updateErr);
+          } else {
+            console.log("RPC fallback: Standard insert (User might be admin or RPC missing)");
+          }
+        } catch (e) {
+          console.log("RPC attempt failed, falling back to insert");
+        }
+
+        if (!createdId) {
+          // Fallback to standard insert
+          const { error: insertError } = await supabase
+            .from('companies')
+            .insert([companyData]);
+          error = insertError;
+        }
       }
 
       if (error) throw error;

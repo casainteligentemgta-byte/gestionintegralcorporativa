@@ -109,30 +109,36 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         </button>
 
         {/* PERSONAL - Row 1 Right */}
-        <button
-          onClick={() => onNavigate('WORKERS')}
-          className="glass-card rounded-apple p-3 flex flex-col justify-between h-28 apple-button text-left bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20"
-        >
-          <div className="flex items-start justify-between">
-            <div className="bg-emerald-500/10 p-1.5 rounded-lg border border-emerald-500/20 w-fit">
+        {/* PERSONAL - Row 1 Right - SPLIT CONTAINER */}
+        <div className="glass-card rounded-apple p-2 flex flex-col justify-between h-28 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20">
+          <div className="flex items-center gap-2">
+            <div className="bg-emerald-500/10 p-1.5 rounded-lg border border-emerald-500/20 w-fit shrink-0">
               <span className="material-symbols-outlined text-emerald-500 text-lg">groups</span>
             </div>
+            <h4 className="text-[11px] font-black tracking-tighter uppercase leading-none text-white">Personal</h4>
           </div>
 
-          <div className="space-y-0.5">
-            <h4 className="text-[13px] font-black tracking-tighter uppercase leading-none text-white">Personal</h4>
-            <div className="flex flex-col gap-0.5 opacity-60">
-              <div className="flex justify-between items-center text-[7px] font-bold uppercase tracking-widest border-l border-purple-500/50 pl-1.5">
-                <span>Empleados</span>
-                <span className="font-mono">{loading ? '..' : stats.employees}</span>
+          <div className="flex flex-col gap-1 mt-0.5">
+            <button
+              onClick={() => onNavigate('EMPLOYEES')}
+              className="flex justify-between items-center px-1.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-all active:scale-95 group"
+            >
+              <div className="flex items-center gap-1 border-l-2 border-purple-500 pl-1">
+                <span className="text-[7.5px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-white">Empleados</span>
               </div>
-              <div className="flex justify-between items-center text-[7px] font-bold uppercase tracking-widest border-l border-emerald-500/50 pl-1.5">
-                <span>Obreros</span>
-                <span className="font-mono">{loading ? '..' : stats.workers}</span>
+              <span className="font-mono text-[9px] font-bold text-white">{loading ? '..' : stats.employees}</span>
+            </button>
+            <button
+              onClick={() => onNavigate('WORKERS')}
+              className="flex justify-between items-center px-1.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-all active:scale-95 group"
+            >
+              <div className="flex items-center gap-1 border-l-2 border-emerald-500 pl-1">
+                <span className="text-[7.5px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-white">Obreros</span>
               </div>
-            </div>
+              <span className="font-mono text-[9px] font-bold text-white">{loading ? '..' : stats.workers}</span>
+            </button>
           </div>
-        </button>
+        </div>
 
         {/* Inventario - Row 2 Left */}
         <button

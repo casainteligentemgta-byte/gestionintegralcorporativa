@@ -5,7 +5,7 @@ import { dataService } from '../services/dataService';
 import { COUNTRIES, NATIONALITIES, SPECIALTIES } from '../constants';
 
 interface RecruitmentFormProps {
-    context: { projectId: string; companyId: string } | null;
+    context: { projectId: string; companyId: string; type: 'WORKER' | 'EMPLOYEE' } | null;
     onNavigate: (view: any) => void;
 }
 
@@ -215,7 +215,8 @@ const RecruitmentForm: React.FC<RecruitmentFormProps> = ({ context, onNavigate }
                 medical_json: formData.medical,
                 sizes_json: formData.sizes,
                 dependents: formData.dependents,
-                experience: formData.experience
+                experience: formData.experience,
+                worker_type: context?.type || 'WORKER'
             };
 
             console.log("🚀 Submitting Final Worker Data:", workerData);
@@ -301,6 +302,9 @@ const RecruitmentForm: React.FC<RecruitmentFormProps> = ({ context, onNavigate }
                     <h1 className="text-3xl font-black text-white tracking-tighter leading-none">
                         {loadingProject ? 'Cargando Obra...' : (projectInfo?.name || 'Nueva Obra')}
                     </h1>
+                    <p className="text-[10px] font-bold text-stone-500 uppercase mt-2 tracking-widest">
+                        {context?.type === 'EMPLOYEE' ? 'POSTULACIÓN: PERSONAL ADMINISTRATIVO' : 'POSTULACIÓN: PERSONAL OPERATIVO'}
+                    </p>
                 </div>
             </div>
 
@@ -309,13 +313,15 @@ const RecruitmentForm: React.FC<RecruitmentFormProps> = ({ context, onNavigate }
                     <div className="glass-card rounded-[2.5rem] p-6 md:p-10 border-white/5 bg-white/[0.02] shadow-2xl space-y-10">
 
                         <div className="space-y-1 text-center mb-4">
-                            <h2 className="text-2xl font-black text-white tracking-tighter">Ficha de Ingreso</h2>
+                            <h2 className="text-2xl font-black text-white tracking-tighter">
+                                {context?.type === 'EMPLOYEE' ? 'Ficha de Ingreso Administrativo' : 'Ficha de Ingreso Operativo'}
+                            </h2>
                             <p className="text-[10px] text-stone-500 uppercase font-black tracking-widest">Todos los campos son obligatorios bajo declaración jurada</p>
                         </div>
 
                         {/* I. IDENTIFICACIÓN Y DATOS PERSONALES */}
                         <div className="space-y-6">
-                            <SectionHeader icon="person" title="I. Identificación del Trabajador" />
+                            <SectionHeader icon="person" title={context?.type === 'EMPLOYEE' ? "I. Identificación del Empleado" : "I. Identificación del Trabajador"} />
 
                             <div className="flex flex-col gap-4 mb-4">
                                 <div onClick={() => document.getElementById('photo-input')?.click()} className="h-64 glass-card border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/[0.01]">

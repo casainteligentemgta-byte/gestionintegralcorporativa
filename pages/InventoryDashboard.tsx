@@ -435,10 +435,10 @@ const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNavigate, hig
                                             className="w-3 h-3 rounded border-white/10 bg-white/5 text-primary focus:ring-primary/50"
                                         />
                                     </th>
-                                    <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest">Material</th>
-                                    <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest text-center">Última Compra</th>
+                                    <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest">Material / Ubicación</th>
+                                    <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest text-center">Última Compra (Fecha / Factura)</th>
+                                    <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest text-center">Proveedor</th>
                                     <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest text-right">Stock</th>
-                                    <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest text-right">Estado</th>
                                     <th className="px-4 py-3 text-[9px] font-black text-stone-500 uppercase tracking-widest text-center">Acciones</th>
                                 </tr>
                             </thead>
@@ -464,26 +464,29 @@ const InventoryDashboard: React.FC<InventoryDashboardProps> = ({ onNavigate, hig
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-black text-stone-100">{item.nombre}</p>
-                                                    <p className="text-[9px] text-stone-500 font-bold uppercase tracking-tighter">{item.unidad_medida}</p>
+                                                    <p className="text-[9px] text-primary font-black uppercase tracking-tighter">Loc: {item.ubicacion || 'ALMACEN-GRAL'}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-center">
                                             <div className="flex flex-col gap-0.5 items-center">
-                                                <span className="text-[8px] font-black text-stone-300 uppercase tracking-widest">
+                                                <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest">
                                                     {item.last_purchase_date ? new Date(item.last_purchase_date).toLocaleDateString() : '-'}
                                                 </span>
-                                                <span className="text-[7px] font-bold text-stone-500 uppercase tracking-tighter">
+                                                <span className="text-[8px] font-bold text-stone-500 uppercase tracking-tighter bg-white/5 px-2 py-0.5 rounded">
                                                     FAC: {item.last_invoice_number || '-'}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <p className="text-sm font-black text-white tabular-nums">{item.stock_disponible}</p>
+                                        <td className="px-4 py-3 text-center">
+                                            <p className="text-[10px] font-black text-white/70 uppercase truncate max-w-[120px] mx-auto">
+                                                {item.last_supplier_name || '-'}
+                                            </p>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="flex justify-end">
-                                                <div className={`h-1.5 w-1.5 rounded-full shadow-lg ${item.stock_disponible <= item.punto_reorden ? 'bg-amber-500 shadow-amber-500/20 animate-pulse' : 'bg-emerald-500 shadow-emerald-500/20'}`}></div>
+                                            <div className="flex flex-col items-end">
+                                                <p className="text-sm font-black text-white tabular-nums leading-none">{item.stock_disponible}</p>
+                                                <p className="text-[8px] font-bold text-stone-500 uppercase mt-1">{item.unidad_medida}</p>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">

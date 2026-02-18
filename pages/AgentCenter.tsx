@@ -44,6 +44,26 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
             color: 'text-amber-400',
             status: 'IDLE',
             lastActive: 'Hace 1 hora'
+        },
+        {
+            id: 'themis',
+            name: 'Themis',
+            role: 'Control Legal y Nómina',
+            description: 'Supervisa la vigencia de recaudos legales y realiza cálculos de prestaciones.',
+            icon: 'gavel',
+            color: 'text-purple-400',
+            status: 'IDLE',
+            lastActive: 'Ahora'
+        },
+        {
+            id: 'hermes',
+            name: 'Hermes',
+            role: 'Enlace WhatsApp',
+            description: 'Puente de comunicación para recibir reportes y alertas en tu móvil.',
+            icon: 'chat',
+            color: 'text-green-400',
+            status: 'IDLE',
+            lastActive: 'Activo'
         }
     ]);
 
@@ -51,6 +71,7 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
     const [auditReport, setAuditReport] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [extractedInvoice, setExtractedInvoice] = useState<any>(null);
+    const [extractedLegalDoc, setExtractedLegalDoc] = useState<any>(null);
 
     const generateStitchReport = async () => {
         setIsAnalyzing(true);
@@ -140,6 +161,64 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
         }
     };
 
+    const generateThemisReport = async () => {
+        setIsAnalyzing(true);
+        try {
+            const [workers, companies] = await Promise.all([
+                dataService.getWorkers(),
+                dataService.getCompanies()
+            ]);
+
+            const systemData = {
+                personal: workers.map(w => ({
+                    nombre: `${w.first_name} ${w.first_surname}`,
+                    rol: w.specialty,
+                    estado: w.status,
+                    recaudos_completos: !!(w.photo && w.id_photo),
+                    hiring_info: w.hiring_data_json
+                })),
+                empresas: companies.map(c => ({
+                    nombre: c.name,
+                    rif: c.rif,
+                    documentacion: c.documentation
+                }))
+            };
+
+            const report = await dataService.getAgentAnalysis(
+                "Themis - Control Legal y Nómina",
+                systemData,
+                "Analiza el cumplimiento legal de la documentación de trabajadores y empresas. Identifica quiénes tienen recaudos pendientes (como fotos de ID o RIF) y sugiere pasos para regularizar su estatus legal. Menciona que próximamente estarás habilitado para cálculos de nómina, prestaciones y liquidaciones."
+            );
+
+            setAuditReport(report);
+            setExtractedInvoice(null);
+        } catch (error) {
+            console.error('Error in Themis analysis:', error);
+            setAuditReport("### ⚠️ Error de Protocolo\nThemis no pudo validar las actas legales en este momento.");
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const generateHermesReport = async () => {
+        setIsAnalyzing(true);
+        try {
+            const report = "### 📱 Enlace de Comunicación Activo\n\nHola, soy **Hermes**. Mi función es servir de puente entre la inteligencia del ERP y tu WhatsApp.\n\n**¿Cómo puedo ayudarte hoy?**\n1. Enviar resumen de compras del día.\n2. Notificar alertas de seguridad (Guardian).\n3. Consultar estatus legal (Themis).\n\nPuedes iniciar una sesión de chat directo conmigo para recibir reportes automáticos.";
+            setAuditReport(report);
+            setExtractedInvoice(null);
+        } catch (error) {
+            console.error('Error in Hermes analysis:', error);
+            setAuditReport("### ⚠️ Error de Conexión\nHermes no pudo establecer el puente de mensajería.");
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleWhatsAppRedirect = () => {
+        const message = `Hola Hermes, necesito un resumen del estatus actual del ERP.`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    };
+
     const handleInvoiceUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -164,6 +243,27 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
         }
     };
 
+    const handleLegalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsAnalyzing(true);
+        setAuditReport(null);
+        setExtractedLegalDoc(null);
+        setExtractedInvoice(null);
+
+        try {
+            const fileUrl = URL.createObjectURL(file);
+            const data = await dataService.analyzeLegalDocument(fileUrl);
+            setExtractedLegalDoc(data);
+        } catch (error: any) {
+            console.error('Legal Analysis Error:', error);
+            alert(`Themis no pudo leer el documento: ${error.message || 'Error desconocido'}`);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const handleSaveInvoice = async () => {
         if (!extractedInvoice) return;
         setIsAnalyzing(true);
@@ -175,7 +275,7 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
                 numero_factura: extractedInvoice.numero_factura,
                 total_neto: extractedInvoice.total_neto,
                 items: extractedInvoice.items.map((item: any) => ({
-                    material_id: 'pending_matching',
+                    material_id: null,
                     cantidad: item.cantidad,
                     precio: item.precio_unitario
                 }))
@@ -188,6 +288,14 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    const handleAgentAction = () => {
+        if (!selectedAgent) return;
+        if (selectedAgent.id === 'stitch') generateStitchReport();
+        else if (selectedAgent.id === 'midas') generateMidasReport();
+        else if (selectedAgent.id === 'themis') generateThemisReport();
+        else if (selectedAgent.id === 'hermes') generateHermesReport();
     };
 
     return (
@@ -263,7 +371,64 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
 
                         {/* Content Area */}
                         <div className="p-8 flex-1">
-                            {extractedInvoice ? (
+                            {extractedLegalDoc ? (
+                                <div className="bg-purple-500/5 border border-purple-500/20 rounded-3xl p-8 space-y-6 animate-in zoom-in-95">
+                                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="material-symbols-outlined text-purple-400">gavel</span>
+                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em]">Análisis Legal Completo</span>
+                                        </div>
+                                        <span className={`text-[10px] font-black px-3 py-1 rounded-full ${extractedLegalDoc.recomendacion?.includes('Rechazar') || extractedLegalDoc.recomendacion?.includes('Riesgo') ? 'bg-red-500 text-white' : 'bg-emerald-500 text-black'}`}>
+                                            {extractedLegalDoc.recomendacion || 'Revisión Completada'}
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div>
+                                            <p className="text-[8px] font-black text-stone-500 uppercase tracking-widest mb-1">Tipo de Documento</p>
+                                            <p className="text-2xl font-black text-white uppercase">{extractedLegalDoc.tipo_documento}</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div>
+                                                <p className="text-[8px] font-black text-stone-500 uppercase tracking-widest mb-2">Partes Involucradas</p>
+                                                <ul className="list-disc list-inside text-stone-300 text-xs space-y-1">
+                                                    {extractedLegalDoc.partes_involucradas?.map((p: string, i: number) => <li key={i}>{p}</li>)}
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <p className="text-[8px] font-black text-stone-500 uppercase tracking-widest mb-2">Riesgos Identificados</p>
+                                                <ul className="space-y-2">
+                                                    {extractedLegalDoc.riesgos_identificados?.map((r: string, i: number) => (
+                                                        <li key={i} className="text-red-400 text-xs font-bold flex items-start gap-2">
+                                                            <span className="material-symbols-outlined text-[14px] mt-0.5">warning</span>
+                                                            <span>{r}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                                            <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mb-3">Cláusulas Críticas</p>
+                                            <div className="space-y-3">
+                                                {extractedLegalDoc.clausulas_criticas?.map((c: string, i: number) => (
+                                                    <div key={i} className="flex gap-3">
+                                                        <div className="w-1 h-full min-h-[1rem] bg-emerald-500/50 rounded-full"></div>
+                                                        <p className="text-stone-300 text-xs leading-relaxed">{c}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4 pt-4 border-t border-white/5">
+                                        <button onClick={() => setExtractedLegalDoc(null)} className="flex-1 h-12 bg-white text-black rounded-2xl font-black uppercase text-[10px] hover:bg-purple-400 transition-colors">
+                                            Cerrar Análisis
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : extractedInvoice ? (
                                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-8 space-y-6 animate-in zoom-in-95">
                                     <div className="flex items-center justify-between border-b border-white/10 pb-4">
                                         <div className="flex items-center gap-3">
@@ -285,7 +450,11 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
                                             </div>
                                             <div>
                                                 <p className="text-[8px] font-black text-stone-500 uppercase tracking-widest mb-1">Número de Factura</p>
-                                                <p className="text-sm font-bold text-stone-300"># {extractedInvoice.numero_factura}</p>
+                                                <p className="text-sm font-bold text-stone-300"># {extractedInvoice.numero_factura || 'No detectado'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[8px] font-black text-stone-500 uppercase tracking-widest mb-1">Fecha de Emisión</p>
+                                                <p className="text-sm font-bold text-stone-300">{extractedInvoice.fecha_emision || 'No detectada'}</p>
                                             </div>
                                         </div>
                                         <div className="bg-black/20 p-6 rounded-2xl border border-white/5 flex flex-col justify-center text-center">
@@ -295,14 +464,29 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
                                     </div>
 
                                     <div className="border-t border-white/5 pt-6 space-y-3">
-                                        <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Items Detectados ({extractedInvoice.items?.length || 0})</p>
-                                        <div className="space-y-2">
-                                            {extractedInvoice.items?.map((item: any, idx: number) => (
-                                                <div key={idx} className="flex justify-between items-center text-xs p-3 bg-white/5 rounded-xl border border-white/5">
-                                                    <span className="text-stone-300 font-bold uppercase">{item.nombre}</span>
-                                                    <span className="text-white font-black">{item.cantidad} x ${item.precio_unitario}</span>
+                                        <div className="flex justify-between items-center">
+                                            <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Detalle de Productos ({extractedInvoice.items?.length || 0})</p>
+                                            <span className="text-[9px] font-bold text-emerald-500/60 uppercase">Extracción NotebookLM</span>
+                                        </div>
+                                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                            {extractedInvoice.items && extractedInvoice.items.length > 0 ? (
+                                                extractedInvoice.items.map((item: any, idx: number) => (
+                                                    <div key={idx} className="flex justify-between items-center p-4 bg-white/[0.03] rounded-2xl border border-white/5 hover:bg-white/[0.06] transition-all group">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[11px] text-white font-black uppercase tracking-tight group-hover:text-emerald-400 transition-colors">{item.nombre}</span>
+                                                            <span className="text-[9px] text-stone-500 font-bold">P. Unitario: ${item.precio_unitario?.toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <span className="text-sm text-white font-black">{item.cantidad}</span>
+                                                            <p className="text-[9px] text-stone-500 font-bold uppercase">Cant.</p>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="py-8 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                                                    <p className="text-stone-500 text-[10px] font-black uppercase">No se detectaron items individuales</p>
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
                                     </div>
 
@@ -328,6 +512,16 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
                                             {auditReport}
                                         </div>
                                     </div>
+
+                                    {selectedAgent.id === 'hermes' && (
+                                        <button
+                                            onClick={handleWhatsAppRedirect}
+                                            className="w-full h-14 bg-green-500 hover:bg-green-400 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 transition-all animate-in zoom-in-95"
+                                        >
+                                            <span className="material-symbols-outlined">chat</span>
+                                            Abrir Chat Directo con Hermes
+                                        </button>
+                                    )}
                                 </div>
                             ) : isAnalyzing ? (
                                 <div className="flex flex-col items-center justify-center py-20 space-y-8">
@@ -352,24 +546,38 @@ const AgentCenter: React.FC<{ onNavigate: (view: any) => void }> = ({ onNavigate
                             {/* Primary Action Button */}
                             <button
                                 disabled={isAnalyzing}
-                                onClick={selectedAgent.id === 'stitch' ? generateStitchReport : generateMidasReport}
-                                className={`w-full h-16 rounded-3xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-[0.98] ${selectedAgent.id === 'midas' ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20' : 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-emerald-500/20'}`}
+                                onClick={handleAgentAction}
+                                className={`w-full h-16 rounded-3xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-[0.98] ${selectedAgent.id === 'midas' ? 'bg-amber-500 hover:bg-amber-400 text-black shadow-amber-500/20' : selectedAgent.id === 'themis' ? 'bg-purple-500 hover:bg-purple-400 text-white shadow-purple-500/20' : selectedAgent.id === 'hermes' ? 'bg-green-500 hover:bg-green-400 text-white shadow-green-500/20' : 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-emerald-500/20'}`}
                             >
                                 <span className="material-symbols-outlined text-xl">bolt</span>
-                                {selectedAgent.id === 'stitch' ? 'Auditoría de Compras (Stitch)' : 'Análisis Financiero (Midas)'}
+                                {selectedAgent.id === 'stitch' ? 'Auditoría de Compras (Stitch)' : selectedAgent.id === 'midas' ? 'Análisis Financiero (Midas)' : selectedAgent.id === 'themis' ? 'Auditoría Legal (Themis)' : 'Enlace WhatsApp (Hermes)'}
                             </button>
 
-                            {/* Secondary Tool: OCR Scanner - Only for Stitch or as a general tool */}
+                            {/* Secondary Tool: OCR Scanner & Legal Analysis */}
                             <div className="flex items-center gap-4">
                                 <label className="flex-1 group cursor-pointer">
-                                    <input type="file" accept="image/*" className="hidden" onChange={handleInvoiceUpload} disabled={isAnalyzing} />
+                                    <input
+                                        type="file"
+                                        accept={selectedAgent.id === 'themis' ? "application/pdf,image/*" : "image/*"}
+                                        className="hidden"
+                                        onChange={selectedAgent.id === 'themis' ? handleLegalUpload : handleInvoiceUpload}
+                                        disabled={isAnalyzing}
+                                    />
                                     <div className="h-14 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-stone-400 group-hover:bg-white/10 group-hover:text-white transition-all">
-                                        <span className="material-symbols-outlined text-xl">photo_camera</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Escanear Factura (IA OCR)</span>
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white">
+                                            <span className="material-symbols-outlined text-sm">auto_stories</span>
+                                        </div>
+                                        <div className="flex flex-col items-start -space-y-0.5">
+                                            <span className="text-[8px] font-black uppercase tracking-widest text-stone-500">Motor de Análisis</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                                                {selectedAgent.id === 'themis' ? 'NotebookLM (Legal)' : 'NotebookLM (Facturación)'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </label>
-                                <button className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl text-stone-400 hover:bg-white/10 transition-all flex items-center justify-center">
-                                    <span className="material-symbols-outlined">settings</span>
+                                <button className="w-14 h-14 bg-white/5 border border-white/10 rounded-2xl text-stone-400 hover:bg-white/10 transition-all flex items-center justify-center relative group">
+                                    <span className="material-symbols-outlined group-hover:animate-spin">settings</span>
+                                    <div className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                                 </button>
                             </div>
                         </div>
