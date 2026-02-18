@@ -22,7 +22,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Critical check for environment variables
     if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-      alert('❌ ERROR DE CONFIGURACIÓN: Las llaves de Supabase no se han detectado en este despliegue. Por favor, ve a Netlify y realiza un "Clear cache and deploy site" desde la pestaña Deploys.');
+      alert('❌ ERROR DE CONFIGURACIÓN: Las llaves de Supabase no se han detectado. Si estás en Vercel, asegúrate de haber configurado VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en las Environment Variables del proyecto y realiza un nuevo despliegue.');
       return;
     }
 
